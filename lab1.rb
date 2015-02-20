@@ -1,7 +1,7 @@
 # encoding: utf-8
 require 'RMagick'
 require 'k_means'
-[File.expand_path('../group.rb', __FILE__)].each {|f| require f}
+[File.expand_path('../group.rb', __FILE__)].each { |f| require f }
 
 GROUPS = 6.freeze
 MIN_SQUARE = 60.freeze
@@ -14,62 +14,129 @@ MIN_P = 10.freeze
 img = Magick::Image.read('images/image.jpg').first
 
 # Changes the brightness, saturation, and hue
-@med = img.dup.modulate(0.4)
-@med.write 'images/result/med.jpg'
+med = img.dup.modulate(0.4)
+med.write 'images/result/med.jpg'
 
 # Change the value of individual pixels based on the intensity of each pixel compared to threshold
-@bin = @med.dup.threshold(Magick::MaxRGB * 0.10)
-@bin.write 'images/result/bin.jpg'
+bin = med.dup.threshold(Magick::MaxRGB * 0.15)
+bin.write 'images/result/bin.jpg'
+detect = bin.dup
 ####################################################
 
 
 ####################################################
 ### Detect items
 ####################################################
-checked = []
-2000.times { |i| checked[i] = Array.new(2000) }
-@groups = []
+@image_arr = []
+bin.rows.times { |i| @image_arr[i] = Array.new(bin.columns) }
 
-@detect = @bin.dup
-@detect.each_pixel do | _, column, row|
-  group ||= Group.new(@detect, checked)
-
-  if group.item?(column, row)
-    group.process_queue << [column, row]
-    group.process
-    @groups << group
-    group = Group.new(@detect, checked)
-  end
-
-  print '.' if column == 0
+bin.each_pixel do |pixel, column, row|
+  @image_arr[row][column] = Group.item?(pixel) ? 1 : 0
 end
 
-print "\n"
+# @image_arr.each_with_index do |row, i|
+#   # row.each_with_index do |m_pixel, j|
+#   #   p row
+#   # end
+#   p row
+#   printf "\n"
+# end
 
-@groups.reject!{|g| g.dots.empty? || g.count < MIN_SQUARE || g.p < MIN_P}
+@kn, @km, @a, @b, @c = 0, 0, 0, 0, 0
+@group_number = 0
+
+@image_arr.each_with_index do |row, i|
+  row.each_with_index do |m_pixel, j|
+    @kn = j - 1
+    if @kn <= 0
+      @kn = 1
+      @b = 0
+    else
+      @b = @image_arr[i][@kn]
+    end
+
+    @km = i - 1
+    if @km <= 0
+      @km = 0
+      @c = 0
+    else
+      @c = @image_arr[@km][j]
+    end
+
+    @a = @image_arr[i][j]
+    if @a == 0
+    elsif @b == 0 && @c == 0
+      @group_number += 1
+      @image_arr[i][j] = @group_number
+    elsif @b == 0 && @c != 0
+      @image_arr[i][j] = @c
+    elsif @b != 0 && @c != 0
+      if @b == @c
+        @image_arr[i][j] = @b
+      else
+        @image_arr[i][j] = @b
+        # some extra code here
+      end
+    end
+  end
+  print '.'
+end
+
+
+@groups = {}
+
+
+@image_arr.each_with_index do |row, i|
+  row.each_with_index do |m_pixel, j|
+    # m_pixel - 2 because: @group_number starts from 2
+    next if m_pixel - 2 < 0
+    group = @groups[m_pixel - 2] || Group.new(@image_arr)
+    group.dots << [i, j]
+    @groups[m_pixel - 2] = group
+  end
+end
+
+@groups.each { |group| group.process }
+
+# @detect.each_pixel do |_, column, row|
+#   group ||= Group.new(@detect, checked)
+#
+#   if group.item?(column, row)
+#     group.process_queue << [column, row]
+#     group.process
+#     @groups << group
+#     group = Group.new(@detect, checked)
+#   end
+#
+#   print '.' if column == 0
+# end
+#
+# print "\n"
+#
+@groups.reject! { |g| g.dots.empty? || g.count < MIN_SQUARE || g.p < MIN_P }
 @groups.each_with_index do |group, i|
   color = RandomColor.get
   puts "Группа ##{i}: #{group.info}"
-  group.dots.each { |x,y| @detect.pixel_color(x, y, color) }
+  group.dots.each { |x, y| detect.pixel_color(y, x, color) }
 end
 
-@detect.write 'images/result/detect.jpg'
+detect.write 'images/result/detect.jpg'
+#
+#
+# ####################################################
+# ### Classify using k-medians algorythm
+# ####################################################
+@classify = bin.dup
 
-
-####################################################
-### Classify using k-medians algorythm
-####################################################
-@classify = @bin.dup
-
-data = @groups.map{|g| g.analyzing_params}
+data = @groups.map { |g| g.analyzing_params }
 kmeans = KMeans.new(data, :centroids => GROUPS).view
 kmeans.each do |ind|
   color = RandomColor.get
   ind.each do |i|
     params = data[i]
-    selected = @groups.select{|g| g.analyzing_params == params }
+    selected = @groups.select { |g| g.analyzing_params == params }
     selected.each do |group|
-      group.dots.each {|x,y| @classify.pixel_color(x, y, color) }
+      group.dots.each { |x, y| @classify.pixel_color(y, x, color) }
     end
   end
 end

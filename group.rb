@@ -8,44 +8,19 @@ class Group
 
   SQUARE = SQUARE_8
 
-  attr_reader :mass, :count, :p, :comp, :dots, :process_queue, :decentered
+  attr_reader :mass, :count, :p, :comp, :dots, :decentered
 
-  def initialize(img, checked)
-    @img = img
+  def initialize(image_arr)
     @mass = [1, 1]
     @p = 1
     @dots = []
-    @process_queue = []
-    @checked = checked
+    @image_arr = image_arr
   end
 
-  def item?(column, row)
-    SQUARE.any? { |dx, dy| @img.pixel_color(column + dx, row + dy).intensity > MAX_INTENSITY }
-  end
 
   def process
-    while !@process_queue.empty?
-      sc, sr = @process_queue.shift
-
-      next if sc < 0 || sr < 0 || sc > @img.columns || sr > @img.rows
-      next if @checked[sc][sr]
-
-      # store all dots
-      @dots << [sc, sr]
-
-      # mark do as checked
-      @checked[sc][sr] = true
-
-      # calculate mass
-      @mass[0] += sc
-      @mass[1] += sr
-
-      if item?(sc, sr)
-        SQUARE.each { |dx, dy| (@process_queue << [sc + dx, sr + dy]) }
-      else
-        @p += 1
-      end
-    end
+    calculate_mass
+    calculate_perimeter
     count_metrics
   end
 
@@ -63,7 +38,29 @@ class Group
     [self.count, self.p]
   end
 
+
+  def self.item?(pixel)
+    pixel.intensity > MAX_INTENSITY
+  end
+
   private
+
+  def calculate_mass
+    @dots.each do |row, column|
+      @mass[0] += row
+      @mass[1] += column
+    end
+  end
+
+  def calculate_perimeter
+    @dots.each do |row, column|
+      @p += 1 if border_pixel?(row, column)
+    end
+  end
+
+  def border_pixel?(row, column)
+    SQUARE.any? { |dx, dy| @image_arr[row + dx][column + dy] > 1 } #!?
+  end
 
   def count_metrics
     return if @dots.empty?
@@ -93,5 +90,4 @@ class Group
   def moment(i, j)
     @dots.inject(0) { |sum, (x, y)| sum + ((x - @mass[0]) ** i) * ((y - @mass[1]) ** j) }
   end
-
 end
