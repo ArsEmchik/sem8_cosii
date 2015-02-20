@@ -6,7 +6,7 @@ class Group
   SQUARE_4 = [[-1, 0], [0, -1], [0, 1], [1, 0]].freeze
   SQUARE_8 = [[-1, 0], [-1, 1], [-1, -1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]].freeze
 
-  SQUARE = SQUARE_8
+  SQUARE = SQUARE_4
 
   attr_reader :mass, :count, :p, :comp, :dots, :decentered
 
@@ -59,7 +59,7 @@ class Group
   end
 
   def border_pixel?(row, column)
-    SQUARE.any? { |dx, dy| @image_arr[row + dx][column + dy] > 1 } #!?
+    SQUARE.any? { |dx, dy| @image_arr[row + dx][column + dy] <= 1 } #!?
   end
 
   def count_metrics

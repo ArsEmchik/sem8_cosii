@@ -43,9 +43,10 @@ end
 # end
 
 @kn, @km, @a, @b, @c = 0, 0, 0, 0, 0
-@group_number = 0
+@group_number = 1
 
-@image_arr.each_with_index do |row, i|
+image_arr = @image_arr
+image_arr.each_with_index do |row, i|
   row.each_with_index do |m_pixel, j|
     @kn = j - 1
     if @kn <= 0
@@ -57,7 +58,7 @@ end
 
     @km = i - 1
     if @km <= 0
-      @km = 0
+      @km = 1
       @c = 0
     else
       @c = @image_arr[@km][j]
@@ -65,17 +66,24 @@ end
 
     @a = @image_arr[i][j]
     if @a == 0
-    elsif @b == 0 && @c == 0
-      @group_number += 1
+      next
+    elsif @b == 0 && @c == 0 &&
+        @group_number += 4
       @image_arr[i][j] = @group_number
+    elsif @b != 0 && @c == 0
+      @image_arr[i][j] = @b
     elsif @b == 0 && @c != 0
       @image_arr[i][j] = @c
     elsif @b != 0 && @c != 0
       if @b == @c
-        @image_arr[i][j] = @b
+        @image_arr[i][j] = @c
       else
-        @image_arr[i][j] = @b
-        # some extra code here
+        if @b <= @c
+          @image_arr[i - 1][j] = @image_arr[i][j - 1]
+        else
+          @image_arr[i][j - 1] = @image_arr[i - 1][j]
+        end
+        @image_arr[i][j] = @image_arr[i][j - 1]
       end
     end
   end
@@ -83,19 +91,19 @@ end
 end
 
 
+p @group_number
+
 @groups = {}
-
-
 @image_arr.each_with_index do |row, i|
   row.each_with_index do |m_pixel, j|
-    # m_pixel - 2 because: @group_number starts from 2
-    next if m_pixel - 2 < 0
-    group = @groups[m_pixel - 2] || Group.new(@image_arr)
+    next if m_pixel <= 1
+    group = @groups[m_pixel.to_s] || Group.new(@image_arr)
     group.dots << [i, j]
-    @groups[m_pixel - 2] = group
+    @groups[m_pixel.to_s] = group
   end
 end
 
+@groups = @groups.values
 @groups.each { |group| group.process }
 
 # @detect.each_pixel do |_, column, row|
@@ -121,10 +129,9 @@ end
 end
 
 detect.write 'images/result/detect.jpg'
-#
-#
+
 # ####################################################
-# ### Classify using k-medians algorythm
+# ### Classify
 # ####################################################
 @classify = bin.dup
 
