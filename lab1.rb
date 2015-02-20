@@ -34,14 +34,6 @@ bin.each_pixel do |pixel, column, row|
   @image_arr[row][column] = Group.item?(pixel) ? 1 : 0
 end
 
-# @image_arr.each_with_index do |row, i|
-#   # row.each_with_index do |m_pixel, j|
-#   #   p row
-#   # end
-#   p row
-#   printf "\n"
-# end
-
 @kn, @km, @a, @b, @c = 0, 0, 0, 0, 0
 @group_number = 1
 
@@ -90,9 +82,6 @@ image_arr.each_with_index do |row, i|
   print '.'
 end
 
-
-p @group_number
-
 @groups = {}
 @image_arr.each_with_index do |row, i|
   row.each_with_index do |m_pixel, j|
@@ -106,21 +95,6 @@ end
 @groups = @groups.values
 @groups.each { |group| group.process }
 
-# @detect.each_pixel do |_, column, row|
-#   group ||= Group.new(@detect, checked)
-#
-#   if group.item?(column, row)
-#     group.process_queue << [column, row]
-#     group.process
-#     @groups << group
-#     group = Group.new(@detect, checked)
-#   end
-#
-#   print '.' if column == 0
-# end
-#
-# print "\n"
-#
 @groups.reject! { |g| g.dots.empty? || g.count < MIN_SQUARE || g.p < MIN_P }
 @groups.each_with_index do |group, i|
   color = RandomColor.get
@@ -136,7 +110,7 @@ detect.write 'images/result/detect.jpg'
 @classify = bin.dup
 
 data = @groups.map { |g| g.analyzing_params }
-kmeans = KMeans.new(data, :centroids => GROUPS).view
+kmeans = KMeans.new(data, :centroids => @groups.count).view
 kmeans.each do |ind|
   color = RandomColor.get
   ind.each do |i|
@@ -149,13 +123,3 @@ kmeans.each do |ind|
 end
 
 @classify.write 'images/result/classify.jpg'
-
-# Shoes.app(height: 600, width: 800) do
-#   @img = image('images/image.jpg')
-#
-#   flow do
-#     %w(image med bin detect classify).each do |type|
-#       button(type) { @img.path = "images/#{type}.jpg" }
-#     end
-#   end#
-# end
