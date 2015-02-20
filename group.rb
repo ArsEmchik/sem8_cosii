@@ -1,32 +1,30 @@
 # encoding: utf-8
-
 require_relative 'random_color'
 
 class Group
-  MAX_INTENSITY = 60000
-  SQUARE_4 = [[-1, 0], [0, -1], [0, 1], [1, 0]]
-  SQUARE_8 = [[-1, 0], [-1, 1], [-1, -1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]]
+  MAX_INTENSITY = 60000.freeze
+  SQUARE_4 = [[-1, 0], [0, -1], [0, 1], [1, 0]].freeze
+  SQUARE_8 = [[-1, 0], [-1, 1], [-1, -1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]].freeze
 
-  SQUARE = SQUARE_4
+  SQUARE = SQUARE_8
 
   attr_reader :mass, :count, :p, :comp, :dots, :process_queue, :decentered
 
   def initialize(img, checked)
     @img = img
-    @mass = [1,1]
+    @mass = [1, 1]
     @p = 1
     @dots = []
     @process_queue = []
     @checked = checked
   end
 
-  def item?(c, r)
-    SQUARE.any? { |dx, dy| @img.pixel_color(c + dx, r + dy).intensity > MAX_INTENSITY  }
+  def item?(column, row)
+    SQUARE.any? { |dx, dy| @img.pixel_color(column + dx, row + dy).intensity > MAX_INTENSITY }
   end
 
   def process
     while !@process_queue.empty?
-
       sc, sr = @process_queue.shift
 
       next if sc < 0 || sr < 0 || sc > @img.columns || sr > @img.rows
@@ -49,12 +47,11 @@ class Group
       end
     end
     count_metrics
-
   end
 
   def info
     return '' if @dots.empty?
-    str ||=  "Площадь: #{@count}; "
+    str ||= "Площадь: #{@count}; "
     str += "Периметр: #{@p}; "
     str += "Компактность: #{@comp}; "
     str += "Нецентрированность: #{@decentered}; "

@@ -1,61 +1,64 @@
 # encoding: utf-8
 require 'RMagick'
 require 'k_means'
-require 'colorize'
 [File.expand_path('../group.rb', __FILE__)].each {|f| require f}
 
-GROUPS = 6
-MIN_SQUARE = 60
-MIN_P = 10
+GROUPS = 6.freeze
+MIN_SQUARE = 60.freeze
+MIN_P = 10.freeze
 
-#
-# Prepare images and data
-#
 
+####################################################
+### Prepare images
+####################################################
 img = Magick::Image.read('images/image.jpg').first
 
+# Changes the brightness, saturation, and hue
 @med = img.dup.modulate(0.4)
-@med.write 'images/med.jpg'
+@med.write 'images/result/med.jpg'
 
-@bin = @med.dup.threshold(Magick::MaxRGB * 0.25)
-@bin.write 'images/bin.jpg'
+# Change the value of individual pixels based on the intensity of each pixel compared to threshold
+@bin = @med.dup.threshold(Magick::MaxRGB * 0.10)
+@bin.write 'images/result/bin.jpg'
+####################################################
 
-@groups = []
+
+####################################################
+### Detect items
+####################################################
 checked = []
 2000.times { |i| checked[i] = Array.new(2000) }
+@groups = []
 
-#
-# Detect items
-#
 @detect = @bin.dup
-
-@detect.each_pixel do |p, c, r|
+@detect.each_pixel do | _, column, row|
   group ||= Group.new(@detect, checked)
 
-  if group.item?(c,r)
-    group.process_queue << [c,r]
+  if group.item?(column, row)
+    group.process_queue << [column, row]
     group.process
     @groups << group
     group = Group.new(@detect, checked)
   end
-  print "." if c == 0
+
+  print '.' if column == 0
 end
 
 print "\n"
 
 @groups.reject!{|g| g.dots.empty? || g.count < MIN_SQUARE || g.p < MIN_P}
-
 @groups.each_with_index do |group, i|
   color = RandomColor.get
   puts "Группа ##{i}: #{group.info}"
   group.dots.each { |x,y| @detect.pixel_color(x, y, color) }
 end
 
+@detect.write 'images/result/detect.jpg'
 
-@detect.write 'images/detect.jpg'
 
-# Classify using k-medians algorythm
-
+####################################################
+### Classify using k-medians algorythm
+####################################################
 @classify = @bin.dup
 
 data = @groups.map{|g| g.analyzing_params}
@@ -71,7 +74,7 @@ kmeans.each do |ind|
   end
 end
 
-@classify.write 'images/classify.jpg'
+@classify.write 'images/result/classify.jpg'
 
 # Shoes.app(height: 600, width: 800) do
 #   @img = image('images/image.jpg')
@@ -80,6 +83,5 @@ end
 #     %w(image med bin detect classify).each do |type|
 #       button(type) { @img.path = "images/#{type}.jpg" }
 #     end
-#   end
-#
+#   end#
 # end
