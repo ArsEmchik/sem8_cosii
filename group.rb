@@ -1,20 +1,32 @@
 # encoding: utf-8
 require_relative 'random_color'
 
+class CustomCentroid
+  attr_accessor :position
+
+  def initialize(position)
+    ; @position = position;
+  end
+
+  def reposition(nodes, centroid_positions)
+  end
+end
+
 class Group
   MAX_INTENSITY = 60000.freeze
   SQUARE_4 = [[-1, 0], [0, -1], [0, 1], [1, 0]].freeze
   SQUARE_8 = [[-1, 0], [-1, 1], [-1, -1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]].freeze
 
-  SQUARE = SQUARE_4
+  SQUARE = SQUARE_8
 
-  attr_reader :mass, :count, :p, :comp, :dots, :decentered
+  attr_reader :mass, :count, :p, :comp, :dots, :decentered, :orient
 
   def initialize(image_arr)
     @mass = [1, 1]
     @p = 1
     @dots = []
     @image_arr = image_arr
+    @orient = 0
   end
 
 
@@ -29,13 +41,13 @@ class Group
     str ||= "Площадь: #{@count}; "
     str += "Периметр: #{@p}; "
     str += "Компактность: #{@comp}; "
-    str += "Нецентрированность: #{@decentered}; "
-    str += "Ориентация: #{@orient}; "
+    str += "Нецентрированность: #{@decentered.round(6)}; "
+    str += "Ориентация: #{@orient.round(6)}; "
     str
   end
 
   def analyzing_params
-    [self.count, self.p]
+    [self.count, self.p, self.comp, self.decentered.round(6)]
   end
 
 
@@ -54,12 +66,16 @@ class Group
 
   def calculate_perimeter
     @dots.each do |row, column|
+      if row == @image_arr.length - 1 || column == @image_arr[0].length - 1
+        @p += 1
+        next
+      end
       @p += 1 if border_pixel?(row, column)
     end
   end
 
   def border_pixel?(row, column)
-    SQUARE.any? { |dx, dy| @image_arr[row + dx][column + dy] <= 1 } #!?
+    SQUARE.any? { |dx, dy| @image_arr[row + dx][column + dy] < 1 } #!?
   end
 
   def count_metrics
