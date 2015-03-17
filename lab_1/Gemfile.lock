@@ -2,9 +2,6 @@ GEM
   remote: https://rubygems.org/
   specs:
     colorize (0.7.5)
-    distance_measures (0.0.6)
-    k_means (0.0.7)
-      distance_measures (>= 0.0.0)
     rmagick (2.13.2)
 
 PLATFORMS
@@ -12,5 +9,4 @@ PLATFORMS
 
 DEPENDENCIES
   colorize
-  k_means
   rmagick (= 2.13.2)
