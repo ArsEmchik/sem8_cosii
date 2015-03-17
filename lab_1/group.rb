@@ -1,17 +1,6 @@
 # encoding: utf-8
 require_relative 'random_color'
 
-class CustomCentroid
-  attr_accessor :position
-
-  def initialize(position)
-    ; @position = position;
-  end
-
-  def reposition(nodes, centroid_positions)
-  end
-end
-
 class Group
   MAX_INTENSITY = 60000.freeze
   SQUARE_4 = [[-1, 0], [0, -1], [0, 1], [1, 0]].freeze

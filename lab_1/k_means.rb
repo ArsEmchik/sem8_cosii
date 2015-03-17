@@ -1,13 +1,13 @@
 class K_Means
-  def initialize(array, groups = 7, cluster_centers = [], max_operations = 10)
-    @array = array # array of array of dots
+  def initialize(array, groups = 7, cluster_centers = [], max_operations = 100)
+    @array = array # array of arrays of dots
     @max_operations = max_operations
     @groups = groups
     @cluster_centers = cluster_centers
 
     if @cluster_centers.empty?
-      indexes = (0..array.size).to_a.shuffle
-      @groups.times { |i |@cluster_centers << @array[i] }
+      indexes = (0..array.size - 1).to_a.shuffle
+      @groups.times { |i| @cluster_centers << @array[indexes[i]] }
     end
 
     @prev_array = []
@@ -25,6 +25,7 @@ class K_Means
     @cluster_centers.each_with_index do |cluster_center, index|
       groped_array[index] = (@prev_array.each_with_index.map { |p_a, m_index| m_index if p_a == cluster_center }).compact
     end
+
     groped_array
   end
 
@@ -65,7 +66,7 @@ class K_Means
     new_center = Array.new(@array.first.size)
 
     @cluster_centers.map! do |cluster_center|
-      new_center.map! { |e| e = 0.0 }
+      new_center.map! { 0.0 }
       num_contours_in_cluster = 0.0
 
       @array.zip(@prev_array).each do |group, nearest_cluster|
